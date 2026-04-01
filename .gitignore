@@ -1,0 +1,38 @@
+# ROS 2 Workspaces
+build/
+install/
+log/
+
+# ROS 2 specific
+COLCON_IGNORE
+*/cmake_args.last
+*/cmake_install.cmake
+*/CMakeCache.txt
+*/Makefile
+*/CMakeFiles/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+
+# C++
+*.o
+*.obj
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
