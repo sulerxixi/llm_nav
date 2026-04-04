@@ -45,25 +45,49 @@ sudo apt install ros-humble-teleop-twist-keyboard
 colcon build --symlink-install
 ```
 
-### 3.2 运行核心节点
+### 3.2 核心系统架构与 TF 坐标系
+
+本项目的 TF 坐标树集成了物理仿真和算法流两大体系，通过在 `mapping.launch.py` 中发布静态 TF 将两者缝合：
+
+1. **物理与底盘控制体系**：`odom` ➔ `base_footprint` ➔ `base_link` ➔ `livox_mid360`
+   - 由 `robot_state_publisher` 和差速控制器发布，描述机器人的真实物理结构和基于轮速推算的里程计。
+2. **FAST-LIO 算法建图体系**：`camera_init` ➔ `body`
+   - `camera_init` 为算法开机第一眼的全局原点，`body` 为算法实时推算出的雷达位姿。
+3. **坐标系缝合桥梁**：`odom` ➔ `camera_init`
+   - 我们强制将算法建图原点与小车下地原点对齐，合并了这两套原本孤立的 TF 树，为 Nav2 提供全局参考。
+
+### 3.3 运行核心节点
 
 请开启多个终端，并在每个终端下执行 `source install/setup.bash`。
 
-**1. 启动 Gazebo 仿真环境**
+**1. 启动 Gazebo 仿真环境与机器人**
 加载基于 URDF 的差速小车并启动 Livox 激光雷达仿真插件。
 ```bash
 ros2 launch my_robot_description gazebo_sim.launch.py
 ```
 
-**2. 启动 FAST-LIO 进行 3D 建图**
-通过 FAST-LIO 节点接收雷达扫描点或 IMU 数据，生成高精度的点云地图和 Odom 数据。
+**2. 启动 FAST-LIO 进行 3D 建图 (附带 RViz)**
+通过 FAST-LIO 接收雷达和 IMU 数据生成高精度的 3D 点云地图，并自动弹出 RViz 界面。
 ```bash
 ros2 launch fast_lio mapping.launch.py config_file:=mid360.yaml
 ```
+*(在弹出的 RViz 中，请将 `Fixed Frame` 设置为 **`odom`** 或 **`camera_init`**，并添加 `/cloud_registered` 观察 3D 点云，添加 `/Odometry` 观察轨迹)*
 
-**3. 键盘控制小车移动**
-使用键盘操作机器人在环境中漫游，配合 FAST-LIO 观察建图效果。
+**3. 启动点云降维转换 (3D 转 2D)**
+将 FAST-LIO 生成的 3D 雷达点云（0.1~1.0米高度内），像切片机一样实时压缩拍扁成 2D 激光雷达扫描数据，供 Nav2 的代价地图避障使用。
+```bash
+ros2 launch my_robot_navigation2 pcl2scan.launch.py
+```
+
+**4. 启动 Nav2 导航框架**
+接收降维后的 `/scan` 数据和合并后的 TF 树，进行全局路径规划和局部避障控制。
+```bash
+ros2 launch my_robot_navigation2 navigation2.launch.py
+```
+
+**5. 键盘控制小车移动 (测试用)**
+使用键盘操作机器人在环境中漫游，观察建图和 3D/2D 点云的生成效果。
 ```bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
-*(提示：使用 `i`、`,`、`j`、`l` 来控制前进、后退、左转与右转。若底盘不响应该控制，请在启动时重映射至正确的 /cmd_vel 话题)*
+*(提示：使用 `i`、`,`、`j`、`l` 来控制。注意在测试 Nav2 自主导航时，不要手动发键盘速度指令以免发生控制冲突)*
