@@ -47,18 +47,16 @@ colcon build --symlink-install
 
 ### 3.2 核心系统架构与 TF 坐标系 (单线高精动态 SLAM)
 
-本项目的最新 TF 坐标树经过深度重构，摒弃了 Gazebo 不准确的轮式里程计（禁用打滑误差），由 FAST-LIO 高精度雷达里程计**完全接管**底层物理车体的定位。实现了“边建图边导航”（Dynamic SLAM + Navigation）的终极形态。
-
-**架构核心路线（完美单线串联）：**
+**架构核心路线：**
 `map` ➔ `odom` ➔ `camera_init` ➔ `body` ➔ `base_footprint` ➔ `base_link` ➔ `livox_mid360`
 
 1. **`map` ➔ `odom`**: 由 Nav2 的 `slam_toolbox` 动态发布，实时修正全图漂移。
 2. **`odom` ➔ `camera_init`**: 静态TF，将 FAST-LIO 世界原点与标准里程计起点绑定。
-3. **`camera_init` ➔ `body`**: 由 FAST-LIO 实时高频发布的**超高精度激光里程计**。
+3. **`camera_init` ➔ `body`**: 由 FAST-LIO 实时高频发布的**高精度激光里程计**。
 4. **`body` ➔ `base_footprint`**: 静态TF，将雷达算出的位姿强行绑定到底盘地面投影上，使得雷达接管了整车的物理移动。
-5. **代价地图处理**: 无图漫游模式。废弃老旧的静态图层，点云 (`/cloud_registered`) 被 `pcl2scan` 实时拍扁为 2D `/scan` 激光线，直接喂给 Nav2 构建实时的动态代价地图（Costmap）。
+5. **代价地图处理**: 无图漫游模式。点云 (`/cloud_registered`) 被 `pcl2scan` 实时拍扁为 2D `/scan` 激光线，给 Nav2 构建实时的动态代价地图（Costmap）。
 
-### 3.3 运行核心节点（完整 5 步启动流）
+### 3.3 运行核心节点（完整 5 步启动）
 
 请在工作空间 `my_robot_ws` 下开启多个终端，并在每个终端执行 `source install/setup.bash`。
 
@@ -69,19 +67,19 @@ ros2 launch my_robot_description gazebo_sim.launch.py
 ```
 
 **2. 启动 FAST-LIO 3D 激光建图与高精定位**
-接收 3D 雷达和 IMU 数据，生成高精度的 3D 点云地图并发布 `body` 位姿（自动弹出 RViz 呈现 3D 震撼视角）。
+接收 3D 雷达和 IMU 数据，生成高精度的 3D 点云地图并发布 `body` 位姿（自动弹出 RViz 呈现 3D 视角）。
 ```bash
 ros2 launch fast_lio mapping.launch.py config_file:=mid360.yaml
 ```
 
 **3. 启动点云降维压缩 (3D 转 2D)**
-将 FAST-LIO 庞大的 3D 点云（高度 -0.1~1.0米）像切片机一样“拍扁”成 2D 激光射线 (`/scan`)，专供 Nav2 避障。
+将 FAST-LIO 庞大的 3D 点云（高度 -0.1~1.0米）“拍扁”成 2D 激光射线 (`/scan`)，供 Nav2 避障。
 ```bash
 ros2 launch my_robot_navigation2 pcl2scan.launch.py
 ```
 
 **4. 启动 Nav2 (动态 SLAM 导航模式)**
-启动自带 `slam_toolbox` 的 Nav2。它会在 RViz 中以“拨开战争迷雾”的形式实时生成 2D 栅格地图。您可以在 RViz 中直接使用 `2D Goal Pose` 指挥小车前往未知区域探索。
+启动自带 `slam_toolbox` 的 Nav2。它会在 RViz 实时生成 2D 栅格地图。您可以在 RViz 中直接使用 `2D Goal Pose` 指挥小车前往未知区域探索。
 ```bash
 ros2 launch my_robot_navigation2 navigation2.launch.py
 ```
