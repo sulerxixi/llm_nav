@@ -33,6 +33,14 @@ def generate_launch_description():
         arguments=['0', '0', '0', '0', '0', '0', 'odom', 'camera_init']
     )
     
+    # 💥 将 FAST-LIO 算出的高精度车体位姿(body)，桥接到小车的物理脚印(base_footprint)上
+    # 这样雷达里程计就正式接管了整台车的底盘，单线 TF 设计完美避障
+    tf_body_to_base_footprint = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        arguments=['0', '0', '0', '0', '0', '0', 'body', 'base_footprint']
+    )
+    
     # 新增 RViz2 节点，自带 FAST-LIO 的配置文件
     rviz_config_path = os.path.join(fast_lio_path, 'rviz', 'fastlio.rviz')
     rviz_node = Node(
@@ -49,5 +57,6 @@ def generate_launch_description():
         declare_config_file_cmd,
         fast_lio_node,
         tf_camera_init_to_odom,
+        tf_body_to_base_footprint,
         rviz_node
     ])

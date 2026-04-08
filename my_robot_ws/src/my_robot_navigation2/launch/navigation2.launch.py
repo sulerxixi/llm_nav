@@ -10,20 +10,17 @@ def generate_launch_description():
     rviz_config_dir = os.path.join(nav2_bringup_dir, 'rviz', 'nav2_default_view.rviz')
     
     use_sim_time = launch.substitutions.LaunchConfiguration('use_sim_time', default='true')
-    map_yaml_path = launch.substitutions.LaunchConfiguration('map', default=os.path.join(my_robot_navigation2_dir, 'maps', 'my_room_map.yaml'))
     nav2_param_path = launch.substitutions.LaunchConfiguration('params_file', default=os.path.join(my_robot_navigation2_dir, 'config', 'nav2_params.yaml'))
-    keepout_mask_yaml = launch.substitutions.LaunchConfiguration('mask', default=os.path.join(my_robot_navigation2_dir, 'maps', 'keepout_mask.yaml'))
 
     return launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument('use_sim_time', default_value=use_sim_time),
-        launch.actions.DeclareLaunchArgument('map', default_value=map_yaml_path),
         launch.actions.DeclareLaunchArgument('params_file', default_value=nav2_param_path),
-        launch.actions.DeclareLaunchArgument('mask', default_value=keepout_mask_yaml),
 
         launch.actions.IncludeLaunchDescription(
             PythonLaunchDescriptionSource([nav2_bringup_dir, '/launch', '/bringup_launch.py']),
             launch_arguments={
-                'map': map_yaml_path,
+                'slam': 'True',
+                'map': '',
                 'use_sim_time': use_sim_time,
                 'params_file': nav2_param_path
             }.items(),
