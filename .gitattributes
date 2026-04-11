@@ -1,0 +1,1 @@
+my_robot_ws/src/my_robot_description/models.zip filter=lfs diff=lfs merge=lfs -text
