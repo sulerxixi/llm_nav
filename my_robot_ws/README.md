@@ -92,3 +92,21 @@ ros2 launch my_robot_navigation2 navigation2.launch.py
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 *(提示：使用 `i`、`,`、`j`、`l` 来控制。注意在测试 Nav2 自主导航时，不要手动发键盘速度指令以免发生控制冲突)*
+
+## Gazebo 模型安装说明
+
+本项目的 Gazebo 模型压缩包位于：
+
+```bash
+/home/xixi5/llm_nav/my_robot_ws/src/my_robot_description/models.zip
+```
+
+使用前需要将模型手动安装到本机的 Gazebo 模型目录：
+
+```bash
+~/.gazebo/models
+```
+
+在文件管理器中按 `Ctrl + H` 可以显示隐藏文件夹，找到 `.gazebo` 后将模型解压到其中的 `models` 目录。
+
+完成后即可正常使用示例 Gazebo 环境；如有需要，也可以自行替换或扩展 Gazebo 模型。
