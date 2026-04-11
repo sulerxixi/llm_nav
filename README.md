@@ -15,6 +15,29 @@
 
 ## 2. 环境与依赖
 
+### ⚠️ 重要提醒：Git LFS 与仓库克隆
+
+本项目包含了体积较大的 Gazebo 仿真模型压缩包 (`models.zip`，约 287MB)。我们使用了 **Git Large File Storage (LFS)** 来管理该文件。
+
+**如果你要克隆本项目，请务必先安装 Git LFS，否则模型文件将无法正确下载，导致仿真环境缺失模型！**
+
+#### 正确的克隆步骤：
+
+1. **安装 Git LFS (如果尚未安装)**:
+   ```bash
+   sudo apt update
+   sudo apt install git-lfs
+   git lfs install
+   ```
+
+2. **克隆仓库并拉取大文件**:
+   你可以直接使用 `git clone`，只要 `git lfs` 安装配置正常，它会自动拉取真实文件：
+   ```bash
+   git clone https://github.com/sulerxixi/llm_nav.git
+   ```
+
+   *(如果你已经不小心用普通方式 clone 了，且 `models.zip` 只有几百字节，可以通过运行 `git lfs pull` 来补救下载真实文件。)*
+
 本项目开发平台信息如下：
 - 系统版本： Ubuntu 22.04 LTS
 - ROS 版本： ROS 2 Humble
@@ -47,16 +70,18 @@ colcon build --symlink-install
 
 ### 3.2 核心系统架构与 TF 坐标系 (单线高精动态 SLAM)
 
-**架构核心路线：**
+本项目的最新 TF 坐标树经过深度重构，摒弃了 Gazebo 不准确的轮式里程计（禁用打滑误差），由 FAST-LIO 高精度雷达里程计**完全接管**底层物理车体的定位。实现了“边建图边导航”（Dynamic SLAM + Navigation）的终极形态。
+
+**架构核心路线（完美单线串联）：**
 `map` ➔ `odom` ➔ `camera_init` ➔ `body` ➔ `base_footprint` ➔ `base_link` ➔ `livox_mid360`
 
 1. **`map` ➔ `odom`**: 由 Nav2 的 `slam_toolbox` 动态发布，实时修正全图漂移。
 2. **`odom` ➔ `camera_init`**: 静态TF，将 FAST-LIO 世界原点与标准里程计起点绑定。
-3. **`camera_init` ➔ `body`**: 由 FAST-LIO 实时高频发布的**高精度激光里程计**。
+3. **`camera_init` ➔ `body`**: 由 FAST-LIO 实时高频发布的**超高精度激光里程计**。
 4. **`body` ➔ `base_footprint`**: 静态TF，将雷达算出的位姿强行绑定到底盘地面投影上，使得雷达接管了整车的物理移动。
-5. **代价地图处理**: 无图漫游模式。点云 (`/cloud_registered`) 被 `pcl2scan` 实时拍扁为 2D `/scan` 激光线，给 Nav2 构建实时的动态代价地图（Costmap）。
+5. **代价地图处理**: 无图漫游模式。废弃老旧的静态图层，点云 (`/cloud_registered`) 被 `pcl2scan` 实时拍扁为 2D `/scan` 激光线，直接喂给 Nav2 构建实时的动态代价地图（Costmap）。
 
-### 3.3 运行核心节点（完整 5 步启动）
+### 3.3 运行核心节点（完整 5 步启动流）
 
 请在工作空间 `my_robot_ws` 下开启多个终端，并在每个终端执行 `source install/setup.bash`。
 
@@ -67,19 +92,19 @@ ros2 launch my_robot_description gazebo_sim.launch.py
 ```
 
 **2. 启动 FAST-LIO 3D 激光建图与高精定位**
-接收 3D 雷达和 IMU 数据，生成高精度的 3D 点云地图并发布 `body` 位姿（自动弹出 RViz 呈现 3D 视角）。
+接收 3D 雷达和 IMU 数据，生成高精度的 3D 点云地图并发布 `body` 位姿（自动弹出 RViz 呈现 3D 震撼视角）。
 ```bash
 ros2 launch fast_lio mapping.launch.py config_file:=mid360.yaml
 ```
 
 **3. 启动点云降维压缩 (3D 转 2D)**
-将 FAST-LIO 庞大的 3D 点云（高度 -0.1~1.0米）“拍扁”成 2D 激光射线 (`/scan`)，供 Nav2 避障。
+将 FAST-LIO 庞大的 3D 点云（高度 -0.1~1.0米）像切片机一样“拍扁”成 2D 激光射线 (`/scan`)，专供 Nav2 避障。
 ```bash
 ros2 launch my_robot_navigation2 pcl2scan.launch.py
 ```
 
 **4. 启动 Nav2 (动态 SLAM 导航模式)**
-启动自带 `slam_toolbox` 的 Nav2。它会在 RViz 实时生成 2D 栅格地图。您可以在 RViz 中直接使用 `2D Goal Pose` 指挥小车前往未知区域探索。
+启动自带 `slam_toolbox` 的 Nav2。它会在 RViz 中以“拨开战争迷雾”的形式实时生成 2D 栅格地图。您可以在 RViz 中直接使用 `2D Goal Pose` 指挥小车前往未知区域探索。
 ```bash
 ros2 launch my_robot_navigation2 navigation2.launch.py
 ```
@@ -91,5 +116,20 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 *(提示：使用 `i`、`,`、`j`、`l` 来控制。注意在测试 Nav2 自主导航时，不要手动发键盘速度指令以免发生控制冲突)*
 
-<img width="4472" height="1561" alt="截图 2026-04-08 13-05-21" src="https://github.com/user-attachments/assets/caf54ce4-bfeb-45b5-914e-90ca9907b379" />
+## Gazebo 模型安装说明
 
+本项目的 Gazebo 模型压缩包位于：
+
+```bash
+/home/xixi5/llm_nav/my_robot_ws/src/my_robot_description/models.zip
+```
+
+使用前需要将模型手动安装到本机的 Gazebo 模型目录：
+
+```bash
+~/.gazebo/models
+```
+
+在文件管理器中按 `Ctrl + H` 可以显示隐藏文件夹，找到 `.gazebo` 后将模型解压到其中的 `models` 目录。
+
+完成后即可正常使用示例 Gazebo 环境；如有需要，也可以自行替换或扩展 Gazebo 模型。
