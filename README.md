@@ -1,6 +1,3 @@
-<img width="4472" height="1561" alt="截图 2026-04-08 12-53-34" src="https://github.com/user-attachments/assets/a12d4dd9-4ff6-4124-be45-b52fbab17f50" />
-# 自动移动机器人
-
 ## 1. 项目介绍
 
 本项目基于 ROS 2 Humble 和 Gazebo Classic 设计了一个集成了固态激光雷达（Livox MID-360）的移动机器人仿真环境。
