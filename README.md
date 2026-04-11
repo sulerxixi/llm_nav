@@ -133,3 +133,5 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 在文件管理器中按 `Ctrl + H` 可以显示隐藏文件夹，找到 `.gazebo` 后将模型解压到其中的 `models` 目录。
 
 完成后即可正常使用示例 Gazebo 环境；如有需要，也可以自行替换或扩展 Gazebo 模型。
+
+file:///home/xixi5/%E5%9B%BE%E7%89%87/%E6%88%AA%E5%9B%BE/%E6%88%AA%E5%9B%BE%202026-04-08%2013-06-23.png
