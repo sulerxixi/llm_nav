@@ -1,3 +1,4 @@
+<img width="4472" height="1561" alt="截图 2026-04-08 12-53-34" src="https://github.com/user-attachments/assets/a12d4dd9-4ff6-4124-be45-b52fbab17f50" />
 # 自动移动机器人
 
 ## 1. 项目介绍
@@ -136,3 +137,4 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <img width="3977" height="1062" alt="截图 2026-04-08 13-06-23" src="https://github.com/user-attachments/assets/46dd3c24-282c-43c2-b4c4-7711b6172ab5" />
 
+<img width="4472" height="1561" alt="截图 2026-04-08 12-53-34" src="https://github.com/user-attachments/assets/0295896f-9561-4592-b59a-77a0b0216bbc" />
