@@ -15,6 +15,29 @@
 
 ## 2. 环境与依赖
 
+### ⚠️ 重要提醒：Git LFS 与仓库克隆
+
+本项目包含了体积较大的 Gazebo 仿真模型压缩包 (`models.zip`，约 287MB)。我们使用了 **Git Large File Storage (LFS)** 来管理该文件。
+
+**如果你要克隆本项目，请务必先安装 Git LFS，否则模型文件将无法正确下载，导致仿真环境缺失模型！**
+
+#### 正确的克隆步骤：
+
+1. **安装 Git LFS (如果尚未安装)**:
+   ```bash
+   sudo apt update
+   sudo apt install git-lfs
+   git lfs install
+   ```
+
+2. **克隆仓库并拉取大文件**:
+   你可以直接使用 `git clone`，只要 `git lfs` 安装配置正常，它会自动拉取真实文件：
+   ```bash
+   git clone https://github.com/sulerxixi/llm_nav.git
+   ```
+
+   *(如果你已经不小心用普通方式 clone 了，且 `models.zip` 只有几百字节，可以通过运行 `git lfs pull` 来补救下载真实文件。)*
+
 本项目开发平台信息如下：
 - 系统版本： Ubuntu 22.04 LTS
 - ROS 版本： ROS 2 Humble
