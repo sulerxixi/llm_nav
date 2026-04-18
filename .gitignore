@@ -43,3 +43,4 @@ my_robot_ws/.venv/
 
 # Third-party SDKs
 Livox-SDK2/
+*.swo
