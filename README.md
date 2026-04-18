@@ -1,3 +1,5 @@
+# 自动移动机器人
+
 ## 1. 项目介绍
 
 本项目基于 ROS 2 Humble 和 Gazebo Classic 设计了一个集成了固态激光雷达（Livox MID-360）的移动机器人仿真环境。
@@ -10,6 +12,7 @@
 - **`livox_ros_driver2`**: 固态激光雷达 Livox 的官方 ROS 2 驱动，提供特有的 `CustomMsg` 消息类型支持。
 - **`ros2_livox_simulation`**: 社区维护的 Livox 雷达 Gazebo 仿真插件，生成高逼真度的点云和 IMU 数据。
 - **`fast_lio`**: 针对 Livox 等雷达深度优化的紧耦合激光雷达惯性里程计算法（FAST-LIO2），用于 3D 建图。
+- **`llm_navigation`**: 基于 NASA JPL 开源的 `jpl-rosa` 框架的大语言模型语义导航包，可通过自然语言指令实现机器人的探索与交互。
 
 ## 2. 环境与依赖
 
@@ -54,7 +57,13 @@ sudo apt install ros-humble-gazebo-ros-pkgs ros-humble-ros2-controllers ros-humb
 sudo apt install ros-humble-teleop-twist-keyboard
 ```
 
-3. **Livox SDK2 (需从源码编译)**
+3. **安装大语言模型导航依赖 (LLM Navigation)**
+本项目使用 NASA JPL 的 `jpl-rosa` 和 `langchain` 进行语义导航。
+```bash
+pip install langchain-anthropic langchain-ollama jpl-rosa
+```
+
+4. **Livox SDK2 (需从源码编译)**
 此环境依赖 Livox-SDK2 ，请在此工作空间外预先克隆并走 CMake 编译构建底层库。
 
 ## 3. 使用方法
@@ -114,6 +123,14 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 *(提示：使用 `i`、`,`、`j`、`l` 来控制。注意在测试 Nav2 自主导航时，不要手动发键盘速度指令以免发生控制冲突)*
 
+**6. 大语言模型（LLM）语义导航 (最新功能)**
+基于 NASA JPL 的开源的 `jpl-rosa` 框架实现自然语言交互导航（详见 `llm_navigation` 功能包）。
+启动节点后，可以通过命令行与自主代理（Agent）对话，命令小车探索房间或者到指定点：
+```bash
+ros2 run llm_navigation semantic_navigator
+```
+*(注意：需要配置相应的 LLM API Key 环境变量，例如使用 Anthropic 或按需配置本地 Ollama 服务)*
+
 ## Gazebo 模型安装说明
 
 本项目的 Gazebo 模型压缩包位于：
@@ -131,7 +148,3 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 在文件管理器中按 `Ctrl + H` 可以显示隐藏文件夹，找到 `.gazebo` 后将模型解压到其中的 `models` 目录。
 
 完成后即可正常使用示例 Gazebo 环境；如有需要，也可以自行替换或扩展 Gazebo 模型。
-
-<img width="3977" height="1062" alt="截图 2026-04-08 13-06-23" src="https://github.com/user-attachments/assets/46dd3c24-282c-43c2-b4c4-7711b6172ab5" />
-
-<img width="4472" height="1561" alt="截图 2026-04-08 12-53-34" src="https://github.com/user-attachments/assets/0295896f-9561-4592-b59a-77a0b0216bbc" />
