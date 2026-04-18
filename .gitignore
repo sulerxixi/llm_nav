@@ -35,3 +35,11 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Virtual Environments
+.venv/
+.venv_test/
+my_robot_ws/.venv/
+
+# Third-party SDKs
+Livox-SDK2/
