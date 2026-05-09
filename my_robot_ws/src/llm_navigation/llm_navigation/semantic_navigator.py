@@ -1,6 +1,5 @@
-from langchain_anthropic import ChatAnthropic
 from langchain_ollama import ChatOllama
-from langchain.agents import tool
+from langchain_core.tools import tool
 from rosa import ROSA
 from rosa.prompts import RobotSystemPrompts
 import os
@@ -71,6 +70,15 @@ LOCATIONS = {
             "y": 2.980589390984495e-08,
             "z": -0.07325043342926793,
             "w": 0.997313578571165,
+        },
+    },
+    "a": {
+        "position": {"x": 1.778921127319336, "y": 0.10455374419689178, "z": 0.0},
+        "orientation": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.15116495156518775,
+            "w": 0.9885091187422638,
         },
     },
     "living room": {
@@ -317,16 +325,22 @@ def main():
         # Check if Ollama remote URL works, or use local
         print("Using Ollama instance locally")
         llm = ChatOllama(
-            model="qwen2.5-coder-tools:latest",  # ensure you have pulled this model locally
+            model="qwen2.5-coder:7b",  # using the model you actually have downloaded
             temperature=0,
             num_ctx=8192,
+            format="json",
         )
     except Exception as e:
         print(f"Error initializing LLM: {e}")
         return
 
     prompt = RobotSystemPrompts()
-    prompt.embodiment = "You are a helpful robot, designed to assist users in a simulated environment. You can navigate, explore, and interact with the environment using various tools."
+    prompt.embodiment = (
+        "You are a helpful robot, designed to assist users in a simulated environment. You can navigate, "
+        "explore, and interact with the environment using various tools. "
+        f"Available locations you can navigate to are: {', '.join(LOCATIONS.keys())}. "
+        "If the user asks you to go to one of these locations, you MUST use the `navigate_to_location_by_name` tool."
+    )
 
     # Pass the LLM to ROSA with both tools available
     agent = ROSA(
@@ -348,6 +362,7 @@ def main():
 
     print("Type 'exit' or 'quit' to end the program")
 
+    import json
     try:
         while True:
             msg = input("Enter your request: ")
@@ -356,11 +371,43 @@ def main():
 
             try:
                 print("Request sent")
-                res = agent.invoke(msg)[0]
+                res = agent.invoke(msg)
+                
+                # ------ Handle the output ------
+                text_out = ""
                 if isinstance(res, dict) and "text" in res:
-                    print(res["text"])
+                    text_out = res["text"]
+                elif isinstance(res, str):
+                    text_out = res
                 else:
-                    print(res)
+                    text_out = str(res)
+                
+                print("LLM Output:", text_out)
+
+                # Custom parser trick: If the LLM just printed the JSON of the tool... Let's execute it for it!
+                if "{" in text_out and "}" in text_out and '"name"' in text_out:
+                    try:
+                        import re
+                        json_str = re.search(r'\{.*\}', text_out).group(0)
+                        tool_call = json.loads(json_str)
+                        
+                        tool_name = tool_call.get("name")
+                        tool_args = tool_call.get("arguments", {})
+                        
+                        print(f"--> [Action Detoured] Forcing execution of {tool_name} with {tool_args}")
+                        
+                        # Map string to your tool functions
+                        if tool_name == "navigate_to_location_by_name":
+                            print(navigate_to_location_by_name.invoke(tool_args))
+                        elif tool_name == "stop":
+                            print(stop.invoke(tool_args))
+                        elif tool_name == "send_vel":
+                            print(send_vel.invoke(tool_args))
+                        elif tool_name == "navigate_to_pose":
+                            print(navigate_to_pose.invoke(tool_args))
+                            
+                    except Exception as parse_e:
+                        print(f"Failed to auto-execute isolated JSON tool: {parse_e}")
             except Exception as e:
                 print(f"An error occurred: {e}")
     except KeyboardInterrupt:
